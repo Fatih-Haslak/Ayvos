@@ -11,8 +11,10 @@ warnings.filterwarnings('ignore')
 class ObjectDetector(ThreadedCamera):
     def __init__(self, model_path):
         super().__init__(model_path)
+        torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
         self.model = torch.hub.load('WongKinYiu/yolov7', 'custom', model_path,
                                     force_reload=True, trust_repo=True)
+        
         self.camera=ThreadedCamera()
 
     def detect_objects(self, frame):
