@@ -1,6 +1,6 @@
 from detect_oop import ObjectDetector
 import cv2
-
+import numpy as np
 class CarCounter(ObjectDetector):
     def __init__(self,model_path):
         super().__init__(model_path)
@@ -38,21 +38,35 @@ class CarCounter(ObjectDetector):
         pass
 
     def run(self): #counbt için gerekli
-        
+        bouindig_boxes_liste=[]
+        arr = np.ones((12, 4))
+        count=0
         while(1):
-            veri,frame,fps=self.dedector.run()
+            veri,frame,fps = self.dedector.run()
+            
             liste=self.string_parser(veri)
-            #print(liste)
+            
             cv2.imshow("Dedect",frame)
             cv2.waitKey(fps)
-            print(liste)
+            #print(liste)
             print("\n")
-
-            print(liste[2][0]["x1"])
-            ad=liste[2][0]
-            print(ad["x1"])
+            for i in liste:
+                if(i[0]["class_name"]=="car"):
+                    arr[count:,0] = i[0]["x1"]
+                    arr[count:,1] = i[0]["y1"]
+                    arr[count:,2] = i[0]["x2"]
+                    arr[count:,3] = i[0]["y2"]
+                    count+=1
+                    # bouindig_boxes_liste.append(i[0]["x1"])
+                    # bouindig_boxes_liste.append(i[0]["y1"])
+                    # bouindig_boxes_liste.append(i[0]["x2"])
+                    # bouindig_boxes_liste.append(i[0]["y2"])
+            print(arr[0:count])
             print("\n")
-
+            print(veri)
+            print(count)
+            count=0
+    
 if __name__ == "__main__":
     count = CarCounter('/home/fatih/yolov7/yolov7.pt')
     count.run()
