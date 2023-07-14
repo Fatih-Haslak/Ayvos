@@ -27,9 +27,9 @@ class ThreadedCamera(object):
          return self.frame, self.FPS_MS
 if __name__ == '__main__':
     src = 'video.mp4'
-    threaded_camera = ThreadedCamera(src)
-    while True:
-        try:
-            threaded_camera.show_frame()
-        except AttributeError:
-            pass
+    # threaded_camera = ThreadedCamera(src)
+    # while True:
+    #     try:
+    #         threaded_camera.show_frame()
+    #     except AttributeError:
+    #         pass
