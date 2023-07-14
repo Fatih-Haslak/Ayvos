@@ -46,7 +46,7 @@ class ObjectDetector:
                     cv2.waitKey(1)
                     self.veri += str(box).split("[")[1].split("]")[0] + '\n'
                     
-                
+                yield self.veri
                 print(self.veri)
                     
             if cv2.waitKey(1) & 0xFF == ord('q'):
