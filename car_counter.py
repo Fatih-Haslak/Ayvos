@@ -42,18 +42,36 @@ class CarCounter(ObjectDetector):
         for sayac1,i in enumerate( liste1,0 ): #guncel dedection
            
             for sayac2, a in enumerate (liste2,0): #eski dedectionlarım 
-
-                if( (i[3]-a[1]) < 130 and (i[3]-a[1] >0)):
-                    print("Bulundu index",sayac1)
-                    print("Silinicek",(i[3]-a[1]))
+                if((i[1]-a[1])<=50):
                     if(temp!=sayac1):
                         silincek_listesi.append(sayac1)
-                    temp=sayac1
-                else:
+                        temp=sayac1
+
+                # print("X_min fark",i[0]-a[0])
+                # print("Y_min fark",i[1]-a[1])
+                # print("X_max fark",i[2]-a[2])
+                # print("Y_MAX fark",i[3]-a[3])
+
+               
+                # if i[0] > a[0] and i[1] > a[1] and i[3] < a[3] and i[2] < a[2]:
                     
-                    print("Silinmeyecek",(i[3]-a[1]))
+                #     if(temp!=sayac1):
+                #         silincek_listesi.append(sayac1)
+                #     temp=sayac1
+                # else:
+                #     pass
+
+                # if( (i[3]-a[1]) < 135 and (i[3]-a[1] >0) ):
+                #     # print("Bulundu index",sayac1)
+                #     # print("Silinicek",(i[3]-a[1]))
+                #     if(temp!=sayac1):
+                #         silincek_listesi.append(sayac1)
+                #     temp=sayac1
+                # else:
+                #     pass
+                #     #print("Silinmeyecek",(i[3]-a[1]))
                 
-        print(silincek_listesi)
+        # print(silincek_listesi)
         liste1 = [liste1[i] for i in range(len(liste1)) if i not in silincek_listesi]
         return liste1
         
@@ -73,9 +91,9 @@ class CarCounter(ObjectDetector):
             self.temp_liste = self.detect_liste
 
            
-            print("Çıkarılmıs hali",yeni_liste)
+            # print("Çıkarılmıs hali",yeni_liste)
             # print("Temp liste ",self.temp_liste)
-            print("\n")
+            # print("\n")
             self.sayac=self.sayac+len(yeni_liste)
            
             return 1
