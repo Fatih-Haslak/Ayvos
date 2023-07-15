@@ -39,39 +39,19 @@ class CarCounter(ObjectDetector):
     def comp_list(self,liste1,liste2):
         silincek_listesi=[]
         temp=-1
-        for sayac1,i in enumerate( liste1,0 ): #guncel dedection
+
+        for sayac1,i in enumerate( liste1): #guncel dedection
            
-            for sayac2, a in enumerate (liste2,0): #eski dedectionlarım 
-                if((i[1]-a[1])<=50):
+            for sayac2, a in enumerate (liste2): #eski dedectionlarım 
+
+                if i[0] < a[2] and i[2] > a[0] and i[1] < a[3] and i[3] > a[1]:
+
                     if(temp!=sayac1):
+                        
                         silincek_listesi.append(sayac1)
                         temp=sayac1
-
-                # print("X_min fark",i[0]-a[0])
-                # print("Y_min fark",i[1]-a[1])
-                # print("X_max fark",i[2]-a[2])
-                # print("Y_MAX fark",i[3]-a[3])
-
-               
-                # if i[0] > a[0] and i[1] > a[1] and i[3] < a[3] and i[2] < a[2]:
-                    
-                #     if(temp!=sayac1):
-                #         silincek_listesi.append(sayac1)
-                #     temp=sayac1
-                # else:
-                #     pass
-
-                # if( (i[3]-a[1]) < 135 and (i[3]-a[1] >0) ):
-                #     # print("Bulundu index",sayac1)
-                #     # print("Silinicek",(i[3]-a[1]))
-                #     if(temp!=sayac1):
-                #         silincek_listesi.append(sayac1)
-                #     temp=sayac1
-                # else:
-                #     pass
-                #     #print("Silinmeyecek",(i[3]-a[1]))
-                
-        # print(silincek_listesi)
+        # print(liste1)
+        #liste1 = [i for j, i in enumerate(liste1) if j not in silincek_listesi]
         liste1 = [liste1[i] for i in range(len(liste1)) if i not in silincek_listesi]
         return liste1
         
@@ -82,13 +62,14 @@ class CarCounter(ObjectDetector):
         orta_nokta_y=(data[1]+data[3])/2
         #orta nokta sadece detect testı ıcın
         if(orta_nokta_x>0 and orta_nokta_y>477 and orta_nokta_x<584 and orta_nokta_y<656):
+
             self.detect_liste.append([data[0],data[1],data[2],data[3]])
-           
-            #print("Uzunluk",len(self.detect_liste))
-            # print("Detect hali",self.detect_liste)  
-            
-            yeni_liste=self.comp_list(self.detect_liste,self.temp_liste)
-            self.temp_liste = self.detect_liste
+         
+      
+        
+            yeni_liste = self.comp_list(self.detect_liste,self.temp_liste) #yenı liste aktif sayılcak listesi
+            #self.temp_liste.clear()
+            self.temp_liste = self.detect_liste # anlık saydıklarımı atıyorumkı bırdakınde yenı ıle eskıyı karsılastıralım
 
            
             # print("Çıkarılmıs hali",yeni_liste)
