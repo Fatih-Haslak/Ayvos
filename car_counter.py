@@ -6,8 +6,8 @@ class CarCounter(ObjectDetector):
         super().__init__(model_path)
         self.dedector=ObjectDetector(model_path)
         self.sayac = 0
-        self.temp_liste = [0,1200]
-
+        self.temp_liste = []
+        self.detect_liste = []
     def string_parser(self,data):
         lines = data.strip().split("\n")
 
@@ -33,22 +33,52 @@ class CarCounter(ObjectDetector):
     def frame_converter(self,frame):
         cv2.line(frame,(183,477),(584,477),(0,100,244),2)
         cv2.line(frame,(679,477),(1031,477),(100,50,100),2)
-        cv2.line(frame,(50,550),(550,550),(0,100,244),2)
+        cv2.line(frame,(0,656),(550,656),(0,100,244),2)
         cv2.line(frame,(670,348),(840,348),(100,50,100),2)
+    
+    def comp_list(self,liste1,liste2):
+        silincek_listesi=[]
+        temp=-1
+        for sayac1,i in enumerate( liste1,0 ): #guncel dedection
+           
+            for sayac2, a in enumerate (liste2,0): #eski dedectionlarım 
+
+                if( (i[3]-a[1]) < 130 and (i[3]-a[1] >0)):
+                    print("Bulundu index",sayac1)
+                    print("Silinicek",(i[3]-a[1]))
+                    if(temp!=sayac1):
+                        silincek_listesi.append(sayac1)
+                    temp=sayac1
+                else:
+                    
+                    print("Silinmeyecek",(i[3]-a[1]))
+                
+        print(silincek_listesi)
+        liste1 = [liste1[i] for i in range(len(liste1)) if i not in silincek_listesi]
+        return liste1
+        
     
     def import_area(self,data):
         
         orta_nokta_x=(data[0]+data[2])/2
         orta_nokta_y=(data[1]+data[3])/2
-   
-        if(orta_nokta_x>50 and orta_nokta_y>477 and orta_nokta_x<584 and orta_nokta_y<550):
-            print("Anlık",orta_nokta_x,orta_nokta_y)
-            print("Eski", self.temp_liste[0],self.temp_liste[1])
+        #orta nokta sadece detect testı ıcın
+        if(orta_nokta_x>0 and orta_nokta_y>477 and orta_nokta_x<584 and orta_nokta_y<656):
+            self.detect_liste.append([data[0],data[1],data[2],data[3]])
+           
+            #print("Uzunluk",len(self.detect_liste))
+            # print("Detect hali",self.detect_liste)  
+            
+            yeni_liste=self.comp_list(self.detect_liste,self.temp_liste)
+            self.temp_liste = self.detect_liste
 
-            self.temp_liste.clear()
-            self.temp_liste.append((data[0]+data[2]/2))
-            self.temp_liste.append((data[1]+data[3]/2))
-
+           
+            print("Çıkarılmıs hali",yeni_liste)
+            # print("Temp liste ",self.temp_liste)
+            print("\n")
+            self.sayac=self.sayac+len(yeni_liste)
+           
+            return 1
         else:
             return 0
     
@@ -56,9 +86,7 @@ class CarCounter(ObjectDetector):
         
         for i in range(0,count):
             if(self.import_area(data[i,:])):
-                self.sayac=self.sayac+1
-
-        print("Araç sayısı",self.sayac)    
+                print("Araç sayısı ",self.sayac)    
 
 
     def run(self): #counbt için gerekli
@@ -81,10 +109,10 @@ class CarCounter(ObjectDetector):
                     arr[count:,2] = i[0]["x2"]
                     arr[count:,3] = i[0]["y2"]
                     count+=1
-            print(veri)
+          
             self.counter(arr,count)
             count=0
-            print("Yeni veri")
+            print("-----Yeni veri----")
 
 
 
