@@ -3,14 +3,15 @@ import cv2
 import numpy as np
 import math 
 
+
 class CarCounter(ObjectDetector):
     def __init__(self,model_path):
         super().__init__(model_path)
         self.dedector=ObjectDetector(model_path)
         self.sayac = 0
-        self.temp_liste = []
+        self.temp_liste = [[0,0]]
         self.detect_liste = []
-
+    
     def string_parser(self,data):
         lines = data.strip().split("\n")
 
@@ -46,20 +47,16 @@ class CarCounter(ObjectDetector):
             for sayac2, a in enumerate(liste1):
                 if(sayac1!=sayac2 and sayac1<sayac2):
                     distance = math.sqrt((a[0] - i[0])**2 + (a[1] - i[1])**2)
-                    if distance<48:
+                    if distance<50:
                         list_distance_indexer.append(sayac1)
-
                     print("-----Yeni veri----")    
                     print("Distance",distance)           
-                  
         
-        print(list_distance_indexer)
-        print(liste1)
-
+        
+        
         for index in reversed(list_distance_indexer):
             del liste1[index]
-        
-        print("Son hali",liste1)
+
         list_distance_indexer.clear()
     
     def import_area(self,data):
@@ -70,20 +67,20 @@ class CarCounter(ObjectDetector):
         #orta nokta sadece detect testı ıcın
         
         if(orta_nokta_x>0 and orta_nokta_y>477 and orta_nokta_x<584 and orta_nokta_y<656):
-
             self.detect_liste.append([orta_nokta_x,orta_nokta_y])
             self.comp_list(self.detect_liste)
 
+        
 
     def counter(self,data,count):
-        
         for i in range(0,count):
             self.import_area(data[i,:]) 
 
-        print("Araba",(self.detect_liste))
-        print("Sayilan araba",len(self.detect_liste))
+        
+        print("Araba",len(self.detect_liste))
+        
 
-    def run(self): #counbt için gerekli
+    def run(self): #count için gerekli
         bouindig_boxes_liste=[]
         arr = np.ones((12, 4))
         count=0
@@ -92,7 +89,7 @@ class CarCounter(ObjectDetector):
             self.frame_converter(frame)
             liste=self.string_parser(veri)
             
-            cv2.imshow("Dedect",frame)
+            cv2.imshow("Detect",frame)
             cv2.waitKey(fps)
             #print(liste)
             # print("\n")
