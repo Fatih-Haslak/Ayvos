@@ -44,7 +44,7 @@ class CarCounter(ObjectDetector):
         orta_nokta_y= (data[1]+data[3])/2
         
     
-        if(orta_nokta_x>0 and orta_nokta_y>400 and orta_nokta_x<623 and orta_nokta_y<730): #zone 1 ıcınde mı
+        if( (orta_nokta_x>0 and orta_nokta_y>400 and orta_nokta_x<623 and orta_nokta_y<730) ): #zone 1 ıcınde mı
             self.detect_liste.append([orta_nokta_x,orta_nokta_y])
         if(orta_nokta_x>660 and orta_nokta_y>400 and orta_nokta_x<1277 and orta_nokta_y<718):
             self.detect2_liste.append([orta_nokta_x,orta_nokta_y])
@@ -91,7 +91,7 @@ class CarCounter(ObjectDetector):
             # print("\n")
             try:
                 for i in liste:
-                    if(i[0]["class_name"]=="car"):
+                    if(i[0]["class_name"]=="car" or i[0]["class_name"]=="truck"):
                         arr[count:,0] = i[0]["x1"]
                         arr[count:,1] = i[0]["y1"]
                         arr[count:,2] = i[0]["x2"]
