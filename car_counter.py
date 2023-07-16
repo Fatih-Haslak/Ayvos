@@ -1,6 +1,8 @@
 from detect_oop import ObjectDetector
 import cv2
 import numpy as np
+import math 
+
 class CarCounter(ObjectDetector):
     def __init__(self,model_path):
         super().__init__(model_path)
@@ -8,6 +10,7 @@ class CarCounter(ObjectDetector):
         self.sayac = 0
         self.temp_liste = []
         self.detect_liste = []
+
     def string_parser(self,data):
         lines = data.strip().split("\n")
 
@@ -36,57 +39,49 @@ class CarCounter(ObjectDetector):
         cv2.line(frame,(0,656),(550,656),(0,100,244),2)
         cv2.line(frame,(670,348),(840,348),(100,50,100),2)
     
-    def comp_list(self,liste1,liste2):
-        silincek_listesi=[]
-        temp=-1
+    def comp_list(self,liste1):
+        list_distance_indexer=[]
 
-        for sayac1,i in enumerate( liste1): #guncel dedection
-           
-            for sayac2, a in enumerate (liste2): #eski dedectionlarım 
+        for sayac1,i in enumerate(liste1):
+            for sayac2, a in enumerate(liste1):
+                if(sayac1!=sayac2 and sayac1<sayac2):
+                    distance = math.sqrt((a[0] - i[0])**2 + (a[1] - i[1])**2)
+                    if distance<48:
+                        list_distance_indexer.append(sayac1)
 
-                if i[0] < a[2] and i[2] > a[0] and i[1] < a[3] and i[3] > a[1]:
-
-                    if(temp!=sayac1):
-                        
-                        silincek_listesi.append(sayac1)
-                        temp=sayac1
-        # print(liste1)
-        #liste1 = [i for j, i in enumerate(liste1) if j not in silincek_listesi]
-        liste1 = [liste1[i] for i in range(len(liste1)) if i not in silincek_listesi]
-        return liste1
+                    print("-----Yeni veri----")    
+                    print("Distance",distance)           
+                  
         
+        print(list_distance_indexer)
+        print(liste1)
+
+        for index in reversed(list_distance_indexer):
+            del liste1[index]
+        
+        print("Son hali",liste1)
+        list_distance_indexer.clear()
     
     def import_area(self,data):
         
         orta_nokta_x=(data[0]+data[2])/2
         orta_nokta_y=(data[1]+data[3])/2
+        
         #orta nokta sadece detect testı ıcın
+        
         if(orta_nokta_x>0 and orta_nokta_y>477 and orta_nokta_x<584 and orta_nokta_y<656):
 
-            self.detect_liste.append([data[0],data[1],data[2],data[3]])
-         
-      
-        
-            yeni_liste = self.comp_list(self.detect_liste,self.temp_liste) #yenı liste aktif sayılcak listesi
-            #self.temp_liste.clear()
-            self.temp_liste = self.detect_liste # anlık saydıklarımı atıyorumkı bırdakınde yenı ıle eskıyı karsılastıralım
+            self.detect_liste.append([orta_nokta_x,orta_nokta_y])
+            self.comp_list(self.detect_liste)
 
-           
-            # print("Çıkarılmıs hali",yeni_liste)
-            # print("Temp liste ",self.temp_liste)
-            # print("\n")
-            self.sayac=self.sayac+len(yeni_liste)
-           
-            return 1
-        else:
-            return 0
-    
+
     def counter(self,data,count):
         
         for i in range(0,count):
-            if(self.import_area(data[i,:])):
-                print("Araç sayısı ",self.sayac)    
+            self.import_area(data[i,:]) 
 
+        print("Araba",(self.detect_liste))
+        print("Sayilan araba",len(self.detect_liste))
 
     def run(self): #counbt için gerekli
         bouindig_boxes_liste=[]
@@ -100,7 +95,7 @@ class CarCounter(ObjectDetector):
             cv2.imshow("Dedect",frame)
             cv2.waitKey(fps)
             #print(liste)
-            print("\n")
+            # print("\n")
             for i in liste:
                 if(i[0]["class_name"]=="car"):
                     arr[count:,0] = i[0]["x1"]
@@ -108,11 +103,9 @@ class CarCounter(ObjectDetector):
                     arr[count:,2] = i[0]["x2"]
                     arr[count:,3] = i[0]["y2"]
                     count+=1
-          
             self.counter(arr,count)
             count=0
-            print("-----Yeni veri----")
-
+            # print("-----Yeni veri----")
 
 
 if __name__ == "__main__":
