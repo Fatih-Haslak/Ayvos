@@ -144,9 +144,10 @@ class Tracker():
         return x_c, y_c, w, h
 
 
-    def count_tracker(self, data, count, frame):
+    def count_tracker(self, data, frame):
         xywh_bboxs = []
-        
+        count=len(data)
+
 
         for i in range(count):
             x_c, y_c, bbox_w, bbox_h = self.xyxy_to_xywh(data[i, :4])

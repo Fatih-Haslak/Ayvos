@@ -39,15 +39,15 @@ class CarCounter(ObjectDetector,Tracker):
             self.detect2_liste.append([orta_nokta_x,orta_nokta_y])
 
 
-    def counter(self,data,count,frame):
-       
-        for i in range(0,count):
+    def counter(self,data,frame):
+        
+        for i in range(0,len(data)):
             self.import_area(data[i,:])
 
             #TUM DATAYI TEK TEK INCELEME KODU
             #COUNT ONEMLİ BİR PARAMETRE()
         
-        frame,_,_,flag = self.tracker.count_tracker(data, count, frame)
+        frame,_,_,flag = self.tracker.count_tracker(data,frame)
         #if flag 1 tespit var eger 0 yok 
         frame = cv2.putText(frame, str(len(self.detect_liste)), (50,50), cv2.FONT_HERSHEY_SIMPLEX, 
                    1,  (0, 0, 0), 2, cv2.LINE_AA)
@@ -68,21 +68,21 @@ class CarCounter(ObjectDetector,Tracker):
 
 
     def run(self): #count için gerekli
-        bouindig_boxes_liste=[]
-        arr = np.ones((12, 6))
+        
         count=0
 
         while(1):
 
             veri,frame,fps = self.dedector.run()
             self.frame_converter(frame)
-            print(veri)
-   
             
-
+            car_count = sum(obj[0]['class_name'] == 'car' for obj in veri)
+            arr = np.ones((car_count, 6))
+            #print("Car_count",car_count)
             try:
                 for i in veri:
-                    if(i[0]["class_name"]=="car" ):
+                    if( i[0]["class_name"]=="car" ):
+                        
                         arr[count:,0] = i[0]["x1"]
                         arr[count:,1] = i[0]["y1"]
                         arr[count:,2] = i[0]["x2"]
@@ -90,8 +90,8 @@ class CarCounter(ObjectDetector,Tracker):
                         arr[count:,4] = i[0]["score"]
                         arr[count:,5] = i[0]["class_id"]
                         count+=1
-                print("COunt",count)        
-                frame=self.counter(arr,count,frame)
+              
+                frame=self.counter(arr,frame)
                 count=0
                 cv2.imshow("Detect",frame)
                 cv2.waitKey(fps)

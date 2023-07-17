@@ -14,17 +14,14 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized, TracedModel
 
-
 from deep_sort_pytorch.utils.parser import get_config
 from deep_sort_pytorch.deep_sort import DeepSort
 from collections import deque
 import numpy as np
 
-
-
 palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
 data_deque = {}
-
+flag=1
 
 
 ##########################################################################################
@@ -128,12 +125,9 @@ def draw_boxes(img, bbox, names,object_id, identities=None, offset=(0, 0)):
         y1 += offset[1]
         y2 += offset[1]
 
-
         start_point = (int(x1),int(y1))
         end_point = (int(x2), int(y2))
         
-        
-
         # code to find center of bottom edge
         center = (int((x2+x1)/ 2), int((y2+y2)/2))
 
@@ -160,8 +154,9 @@ def draw_boxes(img, bbox, names,object_id, identities=None, offset=(0, 0)):
             # generate dynamic thickness of trails
             thickness = int(np.sqrt(opt.trailslen / float(i + i)) * 1.5)
             # draw trails
-            cv2.line(img, data_deque[id][i - 1], data_deque[id][i], color, thickness)
-            cv2.rectangle(img, start_point, end_point, (0, 255, 0), 2)
+            cv2.line(img, data_deque[id][i - 1], data_deque[id][i], color, thickness) #arkadan cıkan cizgi
+            cv2.rectangle(img, start_point, end_point, (222,82,175), 2) ##bbox
+
     return img
 
 def load_classes(path):
@@ -182,7 +177,7 @@ def detect(model1,save_img=False):
     # initialize deepsort
     cfg_deep = get_config()
     cfg_deep.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
-
+    global flag
     deepsort = DeepSort(cfg_deep.DEEPSORT.REID_CKPT,
                         max_dist=cfg_deep.DEEPSORT.MAX_DIST, min_confidence=cfg_deep.DEEPSORT.MIN_CONFIDENCE,
                         nms_max_overlap=cfg_deep.DEEPSORT.NMS_MAX_OVERLAP, max_iou_distance=cfg_deep.DEEPSORT.MAX_IOU_DISTANCE,
@@ -190,40 +185,37 @@ def detect(model1,save_img=False):
                         use_cuda=True)
 
     # Initialize
+
     set_logging()
     device = select_device(opt.device)
-    # half = device.type != 'cpu'  # half precision only supported on CUDA
 
+    # half = device.type != 'cpu'  # half precision only supported on CUDA
     # Load model
     # model = attempt_load(weights, map_location=device)  # load FP32 model
-    
     stride = int(model1.stride.max())  # model stride
     imgsz = check_img_size(imgsz, s=stride)  # check img_size
     print(imgsz)
-    # if trace:
-    #     model = TracedModel(model, device, opt.img_size)
-
-    # if half:
-    #     model.half()  # to FP16
-
-    # Second-stage classifier
-    # classify = False
-    # if classify:
-    #     modelc = load_classifier(name='resnet101', n=2)  # initialize
-    #     modelc.load_state_dict(torch.load('weights/resnet101.pt', map_location=device)['model']).to(device).eval()
-
+    
     # Set Dataloader
+
     vid_path, vid_writer = None, None
+
     if webcam:
+
         view_img = check_imshow()
         cudnn.benchmark = True  # set True to speed up constant image size inference
+        
         dataset = LoadStreams(source, img_size=imgsz, stride=stride)
     else:
+
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
+
+
+
 
     # Get names and colors
     names = load_classes(names)
-    #colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
+    # colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # Run inference
     if device.type != 'cpu':
@@ -232,13 +224,15 @@ def detect(model1,save_img=False):
     old_img_b = 1
 
     t0 = time.time()
+
     for path, img, im0s, vid_cap in dataset:
         img = torch.from_numpy(img).to(device)
-        img = img.half() if half else img.float()  # uint8 to fp16/32
+        img = img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
+        print("asdasd",img.shape)
         if img.ndimension() == 3:
             img = img.unsqueeze(0)
-
+            print("asdasdsa",img.shape)
         # Warmup
         if device.type != 'cpu' and (old_img_b != img.shape[0] or old_img_h != img.shape[2] or old_img_w != img.shape[3]):
             old_img_b = img.shape[0]
@@ -252,17 +246,13 @@ def detect(model1,save_img=False):
         
         with torch.no_grad():   # Calculating gradients would cause a GPU memory leak
             pred = model1(img, augment=opt.augment)[0]
+            
         t2 = time_synchronized()
 
         # Apply NMS
+        #
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
         t3 = time_synchronized()
-
-        # Apply Classifier
-        # if classify:
-        #     pred = apply_classifier(pred, model1, img, im0s)
-
-        # Process detections
 
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
@@ -299,22 +289,24 @@ def detect(model1,save_img=False):
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-                    #if save_img or view_img:  # Add bbox to image
-                        #label = f'{names[int(cls)]} {conf:.2f}'
-                        #plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
+                 
                 xywhs = torch.Tensor(xywh_bboxs)
                 confss = torch.Tensor(confs)
-                
+
                 outputs = deepsort.update(xywhs, confss, oids, im0)
                 if len(outputs) > 0:
+                    print("birinci",xywhs)
                     bbox_xyxy = outputs[:, :4]
+                    print("ikinci",bbox_xyxy)
                     identities = outputs[:, -2]
                     object_id = outputs[:, -1]
-
+                    #print("Object id",object_id)
+                    print("\n")
+                    print("asd",identities[0:])
                     draw_boxes(im0, bbox_xyxy, names, object_id,identities)
 
             # Print time (inference + NMS)
-            print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
+            #print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
 
             # Stream results
             
@@ -352,8 +344,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov7.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
-    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
+    parser.add_argument('--img-size', type=int, default=512, help='inference size (pixels)')
+    parser.add_argument('--conf-thres', type=float, default=0.70, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='display results')
