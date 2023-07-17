@@ -79,10 +79,12 @@ class CarCounter(ObjectDetector,Tracker):
             car_count = sum(obj[0]['class_name'] == 'car' for obj in veri)
             arr = np.ones((car_count, 6))
             #print("Car_count",car_count)
+            
             try:
                 for i in veri:
-                    if( i[0]["class_name"]=="car" ):
-                        
+
+                    if( i[0]["class_name"]=="car" or i[0]["class_name"]=="truck"):
+
                         arr[count:,0] = i[0]["x1"]
                         arr[count:,1] = i[0]["y1"]
                         arr[count:,2] = i[0]["x2"]

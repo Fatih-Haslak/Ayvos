@@ -21,6 +21,7 @@ class Tracker():
             nn_budget=cfg_deep.DEEPSORT.NN_BUDGET,
             use_cuda=True
         )
+        
         self.class_path = 'data/coco.names'
         self.data_deque = {}
         self.names = self.load_classes(self.class_path)
@@ -122,13 +123,14 @@ class Tracker():
 
             for i in range(1, len(self.data_deque[id])):
                 # check if on buffer value is none
+            
                 if self.data_deque[id][i - 1] is None or self.data_deque[id][i] is None:
                     continue
                
                 thickness = int(np.sqrt(64 / float(i + i)) * 1.5)
               
                 cv2.line(img, self.data_deque[id][i - 1], self.data_deque[id][i], (0,128,12), thickness) #arkadan cıkan cizgi
-                cv2.rectangle(img, start_point, end_point, (222,82,175), 2) ##bbox
+                cv2.rectangle(img, start_point, end_point, (222,82,175), 2) ## bbox
         
         return img
 
@@ -148,12 +150,10 @@ class Tracker():
         xywh_bboxs = []
         count=len(data)
 
-
         for i in range(count):
             x_c, y_c, bbox_w, bbox_h = self.xyxy_to_xywh(data[i, :4])
             xywh_bboxs.append([x_c, y_c, bbox_w, bbox_h])
        
-
         xywhs = torch.Tensor(xywh_bboxs)
         confss = torch.Tensor(data[:count, 4])
         oids = data[:count, 5].astype(int).tolist()
@@ -164,8 +164,9 @@ class Tracker():
             bbox_xyxy = outputs[:, :4]
             identities = outputs[:, -2]
             object_id = outputs[:, -1]
-            print("identities",identities)
+            #print("identities",identities)
             frame = self.draw_boxes(frame, bbox_xyxy, self.names,object_id, identities)
+            
             return frame,identities,object_id,1
 
         else:

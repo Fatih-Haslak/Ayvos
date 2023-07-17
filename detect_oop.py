@@ -11,6 +11,7 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
 import torch
 warnings.filterwarnings('ignore')
 
+
 class ObjectDetector(ThreadedCamera):
     def __init__(self, model_path):
         super().__init__(model_path)
@@ -19,7 +20,7 @@ class ObjectDetector(ThreadedCamera):
                                     force_reload=True, trust_repo=True)
         
         self.camera=ThreadedCamera()
-
+            
     def detect_objects(self, frame):
         results = self.model(frame)
         data = results.pandas().xyxy[0]
@@ -55,7 +56,6 @@ class ObjectDetector(ThreadedCamera):
             objects.append(obj)
     
         return objects
-    
     
     
     def run(self):

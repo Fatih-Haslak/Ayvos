@@ -2,7 +2,7 @@ from threading import Thread
 import cv2, time
 
 class ThreadedCamera(object):
-    def __init__(self, src="video.mp4"):
+    def __init__(self, src = 'video.mp4'):
         self.capture = cv2.VideoCapture(src)
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
        
@@ -22,12 +22,14 @@ class ThreadedCamera(object):
             time.sleep(self.FPS)
             
     def show_frame(self):
-        #cv2.imshow('frame', self.frame)
-        #cv2.waitKey(self.FPS_MS)
+        # cv2.imshow('frame', self.frame)
+        # cv2.waitKey(self.FPS_MS)
         return self.frame, self.FPS_MS
+        
 if __name__ == '__main__':
     src = 'video.mp4'
-    # threaded_camera = ThreadedCamera(src)
+    #src= 0
+    #threaded_camera = ThreadedCamera(src)
     # while True:
     #     try:
     #         threaded_camera.show_frame()
