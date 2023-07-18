@@ -9,19 +9,21 @@ from deep_sort_pytorch.utils.parser import get_config
 from collections import deque
 from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
-
-
 from tracker import Tracker
-class CarCounter(ObjectDetector,Tracker):
+
+class CarCounter():
+   
     def __init__(self,model_path):
-        super().__init__(model_path)
+        print("MOdel ",model_path)
         self.dedector=ObjectDetector(model_path)
         self.tracker=Tracker()
         self.detect2_liste = []
         self.detect_liste = []
-
+        self.hesapla= []
+        self.red_flag= 0
 
     def frame_converter(self,frame):
+        
         cv2.rectangle(frame, (0,400), (623,730), (255,124,0), 2)
         cv2.rectangle(frame, (660,400), (1277,718), (0,25,255), 2)
 
@@ -35,20 +37,34 @@ class CarCounter(ObjectDetector,Tracker):
     
         if( (orta_nokta_x>0 and orta_nokta_y>400 and orta_nokta_x<623 and orta_nokta_y<730) ): #zone 1 ıcınde mı
             self.detect_liste.append([orta_nokta_x,orta_nokta_y])
+            
         if(orta_nokta_x>660 and orta_nokta_y>400 and orta_nokta_x<1277 and orta_nokta_y<718):
             self.detect2_liste.append([orta_nokta_x,orta_nokta_y])
+            
 
 
     def counter(self,data,frame):
         
+
+
+        frame,_dentities,_,flag = self.tracker.count_tracker(data,frame)
+        
         for i in range(0,len(data)):
             self.import_area(data[i,:])
-
-            #TUM DATAYI TEK TEK INCELEME KODU
-            #COUNT ONEMLİ BİR PARAMETRE()
         
-        frame,_,_,flag = self.tracker.count_tracker(data,frame)
-        #if flag 1 tespit var eger 0 yok 
+        if flag==1:
+            
+            for i in _dentities:
+                if(i not in self.hesapla):
+                    self.hesapla.append(i) 
+            print("Arac id",self.hesapla)
+            print("Toplam arac sayısı",len(self.hesapla))
+
+        frame = cv2.putText(frame, str(len(self.hesapla)), (100,100), cv2.FONT_HERSHEY_SIMPLEX, 
+                   1,  (10, 110, 220), 2, cv2.LINE_AA)
+
+
+
         frame = cv2.putText(frame, str(len(self.detect_liste)), (50,50), cv2.FONT_HERSHEY_SIMPLEX, 
                    1,  (0, 0, 0), 2, cv2.LINE_AA)
 
@@ -72,7 +88,7 @@ class CarCounter(ObjectDetector,Tracker):
         count=0
 
         while(1):
-
+        
             veri,frame,fps = self.dedector.run()
             self.frame_converter(frame)
             
@@ -80,10 +96,12 @@ class CarCounter(ObjectDetector,Tracker):
             arr = np.ones((car_count, 6))
             #print("Car_count",car_count)
             
+
             try:
+
                 for i in veri:
 
-                    if( i[0]["class_name"]=="car" or i[0]["class_name"]=="truck"):
+                    if( i[0]["class_name"]=="car"):
 
                         arr[count:,0] = i[0]["x1"]
                         arr[count:,1] = i[0]["y1"]

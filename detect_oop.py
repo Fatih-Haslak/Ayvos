@@ -12,15 +12,15 @@ import torch
 warnings.filterwarnings('ignore')
 
 
-class ObjectDetector(ThreadedCamera):
+class ObjectDetector():
     def __init__(self, model_path):
-        super().__init__(model_path)
         torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
         self.model = torch.hub.load('WongKinYiu/yolov7', 'custom', model_path,
                                     force_reload=True, trust_repo=True)
-        
+
         self.camera=ThreadedCamera()
-            
+
+           
     def detect_objects(self, frame):
         results = self.model(frame)
         data = results.pandas().xyxy[0]
@@ -62,10 +62,11 @@ class ObjectDetector(ThreadedCamera):
         
         flag=0
         while True:
-            #self.ret, self.frame = vid.read()
             
+            #self.ret, self.frame = vid.read()
+        
             try:
-                self.frame,self.FPS_MS=self.camera.show_frame()
+                self.frame,self.FPS_MS = self.camera.show_frame()
                 flag=1
             except AttributeError:
                 pass
@@ -87,7 +88,7 @@ class ObjectDetector(ThreadedCamera):
                 #cv2.waitKey(1)
                 duzenli_veri=self.string_parser(self.veri)
                 return duzenli_veri,self.frame, self.FPS_MS
-                #print(self.veri)
+                
 
 
 if __name__ == "__main__":
