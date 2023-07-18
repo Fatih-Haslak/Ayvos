@@ -25,7 +25,7 @@ class Detector:
             #Dedection
             path="COCO-Detection/faster_rcnn_R_50_C4_1x.yaml"
         elif(select_mode==0):
-            #Dedection
+            #segment
             path="COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
         
         self.cfg = get_cfg()
