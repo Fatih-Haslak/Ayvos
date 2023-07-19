@@ -20,7 +20,7 @@ class CarCounter():
         self.detect2_liste = []
         self.detect_liste = []
         self.hesapla= []
-        self.red_flag= 0
+       
 
     def frame_converter(self,frame):
         
@@ -37,11 +37,13 @@ class CarCounter():
     
         if( (orta_nokta_x>0 and orta_nokta_y>400 and orta_nokta_x<623 and orta_nokta_y<730) ): #zone 1 ıcınde mı
             self.detect_liste.append([orta_nokta_x,orta_nokta_y])
-            
+         
+        
         if(orta_nokta_x>660 and orta_nokta_y>400 and orta_nokta_x<1277 and orta_nokta_y<718):
             self.detect2_liste.append([orta_nokta_x,orta_nokta_y])
-            
+          
 
+        
 
     def counter(self,data,frame):
         
@@ -49,17 +51,18 @@ class CarCounter():
 
         frame,_dentities,_,flag = self.tracker.count_tracker(data,frame)
         
+        
         for i in range(0,len(data)):
             self.import_area(data[i,:])
-        
-        if flag==1:
             
+
+        if (flag==1):
             for i in _dentities:
                 if(i not in self.hesapla):
                     self.hesapla.append(i) 
             print("Arac id",self.hesapla)
-            print("Toplam arac sayısı",len(self.hesapla))
-
+            print("Toplam arac sayisi on the screen",len(self.hesapla))
+       
         frame = cv2.putText(frame, str(len(self.hesapla)), (100,100), cv2.FONT_HERSHEY_SIMPLEX, 
                    1,  (10, 110, 220), 2, cv2.LINE_AA)
 

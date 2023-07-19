@@ -29,7 +29,7 @@ class ThreadedCamera():
         
 if __name__ == '__main__':
     src = 'video.mp4'
-    src= 0
+    # src= 0
     # threaded_camera = ThreadedCamera(src)
     # while True:
     #     try:
