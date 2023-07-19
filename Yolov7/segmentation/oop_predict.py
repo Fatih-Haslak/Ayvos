@@ -1,8 +1,10 @@
+#https://github.com/WongKinYiu/yolov7/blob/u7/seg/segment/predict.py
 import argparse
 import os
 import platform
 import sys
 from pathlib import Path
+import time
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -54,8 +56,8 @@ class YOLOv7Segmentation:
         parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
         parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --classes 0, or --classes 0 2 3')
         parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
-        parser.add_argument('--augment', action='store_true', help='augmented inference')
-        parser.add_argument('--visualize', action='store_true', help='visualize features')
+        #parser.add_argument('--augment', action='store_true', help='augmented inference')
+        #parser.add_argument('--visualize', action='store_true', help='visualize features')
         parser.add_argument('--update', action='store_true', help='update all models')
         parser.add_argument('--project', default=ROOT / 'runs/predict-seg', help='save results to project/name')
         parser.add_argument('--name', default='exp', help='save results to project/name')
@@ -79,12 +81,13 @@ class YOLOv7Segmentation:
         
         #Model yüklenımı ve data cekımı
         device = select_device(device)
-        print("Dnn",dnn)
-        print("Data",data)
-        print("Fp16",half)
+        #print("Dnn",dnn)
+        #print("Data",data)
+     
+        #print("Fp16",half)
         #fp16==false daha hızlı
         #fp16==True baya yavas
-        model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=False)
+        model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=False)
         
         #Model parametlerını bastırarak datatype ogrenme 
         #for param in model.parameters():
@@ -99,6 +102,7 @@ class YOLOv7Segmentation:
             dataset = LoadStreams(source, img_size=imgsz, stride=stride, auto=pt)
             bs = len(dataset)  # batch_size
         else:
+            cudnn.benchmark = True
             dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt)
             bs = 1  # batch_size
         vid_path, vid_writer = [None] * bs, [None] * bs
@@ -111,56 +115,47 @@ class YOLOv7Segmentation:
     
 
     def run(self, weights, source, data, imgsz, conf_thres, iou_thres, max_det, device, view_img, save_txt, save_conf,
-            save_crop, nosave, classes, agnostic_nms, augment, visualize, update, project, name, exist_ok,
+            save_crop, nosave, classes, agnostic_nms, update, project, name, exist_ok,
             line_thickness, hide_labels, hide_conf, half, dnn):
 
 
         source = str(source)
-        save_img = not nosave and not source.endswith('.txt')  # save inference images
+       
         is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
-
         is_url = source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
         
         webcam = source.isnumeric() or source.endswith('.txt') or (is_url and not is_file)
 
         if is_url and is_file:
             source = check_file(source)  # download
-
-        # Directories
-        save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-        (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-
  
         model, seen, windows, dt ,dataset,device,names,vid_path,vid_writer = self.model_load(webcam,weights,device,dnn,data,half,imgsz,source)
         
-
-        names2 = model.module.names if hasattr(model, 'module') else model.names
-  
         colors2 = [[random.randint(0, 255) for _ in range(3)] for _ in names]
-
+        s=f''
+        fps=0
         for path, im, im0s, vid_cap, s in dataset:
-
+            t1 = time.time()
             with dt[0]:
                 # frame shape (3,x,y) chanell width and height and numpy array
                 im = torch.from_numpy(im).to(device)
                 im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32 float 16 or float 32 for memory optimizer
-                
                 im /= 255  # 0 - 255 to 0.0 - 1.0  # 255' e  'bolunmediğinde cuda memory  yetmedi'
                 # frame shape torch(3,x,y) chanell width and height
-       
                 if len(im.shape) == 3:
-                    im = im[None]  # expand for batch dim
+                    im = im.unsqueeze(0)  # expand for batch dim
                 
                 #frame shape torch(1,3,x,y) batch,chanell width and height
-
+            #print("Shape",im.shape)
             # Inference
-
+            
             with dt[1]:
-                visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
-                pred, out = model(im, augment=augment, visualize=visualize)
+                pred, out = model(im,augment=False, visualize=False)
                 proto = out[1]
-
+            
+                
             # NMS
+            
             with dt[2]:
                 pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det, nm=32)
 
@@ -171,103 +166,73 @@ class YOLOv7Segmentation:
                 seen += 1
                 if webcam:  # batch_size >= 1
                     p, im0, frame = path[i], im0s[i].copy(), dataset.count
-                    s += f'{i}: '
                 else:
+                    #p, im0, frame = path[i], im0s[i].copy(), dataset.count
                     p, im0, frame = path, im0s.copy(), getattr(dataset, 'frame', 0)
-
-                p = Path(p)  # to Path
-                save_path = str(save_dir / p.name)  # im.jpg
-                txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # im.txt
-                s += '%gx%g ' % im.shape[2:]  # print string
+  
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
-                imc = im0.copy() if save_crop else im0  # for save_crop
-                annotator = Annotator(im0, line_width=line_thickness, example=str(names))
-                
+                   
                 if len(det):
                     
                     masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
 
                     # Rescale boxes from img_size to im0 size
-                    det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
+                    if webcam:
+                        det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
                     
                     #bbox= det[:, :4].detach().cpu().numpy()
 
                     # Segments
-                    if 1:
-                        segments = reversed(masks2segments(masks))
-                        segments = [scale_segments(im.shape[2:], x, im0.shape).round() for x in segments]
+                    segments = reversed(masks2segments(masks))
+                    segments = [scale_segments(im.shape[2:], x, im0.shape).round() for x in segments]
 
                     # Print results
                     for c in det[:, 5].unique():
                         n = (det[:, 5] == c).sum()  # detections per class
                         s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
                         print(s)
-                            
-                    # Mask plotting ----------------------------------------------------------------------------------------
-                    mcolors = [colors(int(6), True) for cls in det[:, 5]]
-                    im0 = plot_masks(im[i], masks, mcolors)  # image with masks shape(imh,imw,3) #color hep aynı
-                 
-                    #Bbox çizimi
-                    for i,conf in enumerate(det[:,4:6]):
 
+                    # Mask plotting ----------------------------------------------------------------------------------------
+                    mcolors = [colors(cls, True) for cls in det[:, 5]]
+                    im0 = plot_masks(im[i], masks, mcolors)  # image with masks shape(imh,imw,3) 
+                    
+                    #Bbox çizimi
+                    for i,conf in enumerate(det[:,4:6]):   
                         oran = conf[0].item() 
                         isim = conf[1].item()
-
+                        # print("Oran",oran)
+                        # print("İsim",isim)
+                        # print("XX",det[i,:4])
                         label = f'{names[int(isim)]} {oran:.2f}'
                         plot_one_box(det[i, :4], im0, label=label, color=colors2[i], line_thickness=1)       
-                    
-        
+            
                 
                 
                 if platform.system() == 'Linux' and p not in windows:
-                    windows.append(p)
-                    cv2.namedWindow(str(p), cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
-                    cv2.resizeWindow(str(p), im0.shape[1], im0.shape[0])
-                cv2.imshow(str(p), im0)
+                    windows.append("Detect")
+                    cv2.namedWindow("Detect", cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
+                    cv2.resizeWindow("Detect", im0.shape[1], im0.shape[0])
+                cv2.putText(im0, str(fps), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                cv2.imshow("Detect", im0)
                 cv2.waitKey(1)  # 1 millisecond
-
-
-                # Save results (image with detections)
-                # if save_img:
-                #     if dataset.mode == 'image':
-                #         cv2.imwrite(save_path, im0)
-                #     else:  # 'video' or 'stream'
-                #         if vid_path[i] != save_path:  # new video
-                #             vid_path[i] = save_path
-                #             if isinstance(vid_writer[i], cv2.VideoWriter):
-                #                 vid_writer[i].release()  # release previous video writer
-                #             if vid_cap:  # video
-                #                 fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                #                 w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-                #                 h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                #             else:  # stream
-                #                 fps, w, h = 30, im0.shape[1], im0.shape[0]
-                #             save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                #             vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-                #         vid_writer[i].write(im0)
-
+            t2 = time.time()
+                
 
             # Print time (inference-only) 
-            preprocess_time = dt[0].dt*1E3  # Pre-process süresi
-            inference_time = dt[1].dt*1E3  # Inference süresi
-            nms_time = dt[2].dt*1E3  # NMS süresi
-            total_time = preprocess_time + inference_time + nms_time  # Toplam süre
+           
+            total_time = t2 - t1  # Toplam süre
             
-            fps = int(1000 / inference_time)  # FPS hesaplama (1000 milisaniye = 1 saniye)
+            fps = int(1 / total_time)  # FPS hesaplama (1000 milisaniye = 1 saniye)
 
-            #LOGGER.info(f"Camera FPS: {fps:.2f}")
+            LOGGER.info(f"Camera FPS: {fps:.2f}")
             #LOGGER.info(f"{s}{'' if len(det) else '(no detections), '}{dt[1].dt * 1E3:.1f}ms")
 
         # Print results
         t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
 
-
         LOGGER.info(
             f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
 
-        # if save_txt or save_img:
-        #     s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
-        #     LOGGER.info(f"Results saved to {colorstr('bold', save_dir)}{s}")
         if update:
             strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
