@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-print(ROOT)
+print("Path",ROOT)
         
 
 from models.common import DetectMultiBackend
@@ -45,7 +45,7 @@ class YOLOv7Segmentation:
         parser.add_argument('--source', type=str, default=ROOT / 'football1.mp4', help='file/dir/URL/glob, 0 for webcam')
         parser.add_argument('--data', type=str, default=ROOT / 'data/coco.yaml', help='(optional) dataset.yaml path')
         parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
-        parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
+        parser.add_argument('--conf-thres', type=float, default=0.75, help='confidence threshold')
         parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
         parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
         parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
@@ -87,7 +87,7 @@ class YOLOv7Segmentation:
         #print("Fp16",half)
         #fp16==false daha hızlı
         #fp16==True baya yavas
-        model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=False)
+        model = DetectMultiBackend(weights, device=device, dnn=False, data=data, fp16=half)
         
         #Model parametlerını bastırarak datatype ogrenme 
         #for param in model.parameters():
@@ -130,15 +130,23 @@ class YOLOv7Segmentation:
             source = check_file(source)  # download
  
         model, seen, windows, dt ,dataset,device,names,vid_path,vid_writer = self.model_load(webcam,weights,device,dnn,data,half,imgsz,source)
-        
+
+        for param in model.parameters():
+            print("Param dtype",param.dtype)
+            break
+            
+
+        #names = model.module.names if hasattr(model, 'module') else model.names
         colors2 = [[random.randint(0, 255) for _ in range(3)] for _ in names]
         s=f''
         fps=0
         for path, im, im0s, vid_cap, s in dataset:
             t1 = time.time()
+        
             with dt[0]:
                 # frame shape (3,x,y) chanell width and height and numpy array
                 im = torch.from_numpy(im).to(device)
+                
                 im = im.half() if model.fp16 else im.float()  # uint8 to fp16/32 float 16 or float 32 for memory optimizer
                 im /= 255  # 0 - 255 to 0.0 - 1.0  # 255' e  'bolunmediğinde cuda memory  yetmedi'
                 # frame shape torch(3,x,y) chanell width and height
@@ -161,7 +169,7 @@ class YOLOv7Segmentation:
 
 
             # Process predictions
-
+      
             for i, det in enumerate(pred):  #per image
                 seen += 1
                 if webcam:  # batch_size >= 1
@@ -173,7 +181,7 @@ class YOLOv7Segmentation:
                 gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
                    
                 if len(det):
-                    
+                    #print("im.shape[2:]",im.shape[2:])
                     masks = process_mask(proto[i], det[:, 6:], det[:, :4], im.shape[2:], upsample=True)  # HWC
 
                     # Rescale boxes from img_size to im0 size
@@ -183,9 +191,9 @@ class YOLOv7Segmentation:
                     #bbox= det[:, :4].detach().cpu().numpy()
 
                     # Segments
-                    segments = reversed(masks2segments(masks))
-                    segments = [scale_segments(im.shape[2:], x, im0.shape).round() for x in segments]
-
+                    # segments = reversed(masks2segments(masks))
+                    # segments = [scale_segments(im.shape[2:], x, im0.shape).round() for x in segments]
+                    # print("segment",segments)
                     # Print results
                     for c in det[:, 5].unique():
                         n = (det[:, 5] == c).sum()  # detections per class
@@ -206,12 +214,11 @@ class YOLOv7Segmentation:
                         label = f'{names[int(isim)]} {oran:.2f}'
                         plot_one_box(det[i, :4], im0, label=label, color=colors2[i], line_thickness=1)       
             
-                
-                
+                    
                 if platform.system() == 'Linux' and p not in windows:
                     windows.append("Detect")
-                    cv2.namedWindow("Detect", cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
-                    cv2.resizeWindow("Detect", im0.shape[1], im0.shape[0])
+                    cv2.namedWindow("Detect", cv2.WINDOW_KEEPRATIO)  # allow window resize (Linux)
+                    cv2.resizeWindow("Detect", (512 , 512) )
                 cv2.putText(im0, str(fps), (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 cv2.imshow("Detect", im0)
                 cv2.waitKey(1)  # 1 millisecond
@@ -219,7 +226,7 @@ class YOLOv7Segmentation:
                 
 
             # Print time (inference-only) 
-           
+            
             total_time = t2 - t1  # Toplam süre
             
             fps = int(1 / total_time)  # FPS hesaplama (1000 milisaniye = 1 saniye)
