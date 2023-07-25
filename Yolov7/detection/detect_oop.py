@@ -23,11 +23,18 @@ class ObjectDetector():
                                    force_reload=True, trust_repo=True)
 		
         self.camera=ThreadedCamera(src)
-
+        self.points = np.array([[[446,344],[849,363],[1275,622],[1278,719],[0,717],[0,571]]])
            
     def detect_objects(self, frame):
-
-        results = self.model(frame)
+        mask = np.zeros(self.frame.shape[0:2], dtype=np.uint8)
+        cv2.fillPoly(mask, [self.points], 255)
+        overlay = self.frame.copy()
+        cv2.fillPoly(overlay, [self.points], (0, 255, 0))
+        cv2.addWeighted(overlay, 0.1, self.frame, 1 - 0.1, 0, self.frame)
+        cv2.drawContours(mask, [self.points], -1, (255, 255, 255), -1, cv2.LINE_AA)
+        self.frame = cv2.bitwise_and(self.frame,self.frame,mask = mask) 
+        
+        results = self.model(self.frame)
         data = results.pandas().xyxy[0]
         data = data.to_numpy()
         return data
@@ -74,6 +81,7 @@ class ObjectDetector():
         
             try:
                 self.frame,self.FPS_MS = self.camera.show_frame()
+
                 flag=1
             except AttributeError:
                 pass
