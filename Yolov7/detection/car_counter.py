@@ -26,8 +26,8 @@ class CarCounter():
         self.in_line=[]
         self.out_line=[]
         
-        self.coordinates_in = [(446, 344), (626, 353), (525, 719),(5, 570)]
-        self.coordinates_out = [(663, 357), (849, 363), (1275, 622),(708, 716)]
+        self.coordinates_in = [(446, 344), (626, 353), (525, 719),(0,717),(5, 570)]
+        self.coordinates_out = [(663, 357), (849, 363), (1275, 622),(1275,717),(708, 716)]
         self.polygon = Polygon(self.coordinates_in)
         self.polygon2 = Polygon(self.coordinates_out)
 
@@ -36,11 +36,11 @@ class CarCounter():
         for i in range(len(self.coordinates_in)):
             x1, y1 = self.coordinates_in[i]
             x2, y2 = self.coordinates_in[(i + 1) % len(self.coordinates_in)]
-            cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Yeşil renkte çizgi, kalınlığı 2
+            cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)  # Yeşil renkte çizgi, kalınlığı 2
         for i in range(len(self.coordinates_out)):
             x1, y1 = self.coordinates_out[i]
             x2, y2 = self.coordinates_out[(i + 1) % len(self.coordinates_out)]
-            cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Yeşil renkte çizgi, kalınlığı 2
+            cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)  # Yeşil renkte çizgi, kalınlığı 2
         
 
 
@@ -77,43 +77,34 @@ class CarCounter():
                 self.import_area(bbox_xyxy[i,0:4],_dentities[i])
 
 
-
         frame = cv2.putText(frame, "Anlik Gelen Arac", (100,150), cv2.FONT_HERSHEY_SIMPLEX, 
-                   1,  (255, 255, 100), 2, cv2.LINE_AA)
-        
+                   1,  (255, 255, 100), 2, cv2.LINE_AA)    
+
         frame = cv2.putText(frame, "Anlik Giden Arac", (800,150), cv2.FONT_HERSHEY_SIMPLEX, 
             1,  (255, 255, 100), 2, cv2.LINE_AA)
-    
 
         frame = cv2.putText(frame, str(sayac_out), (800,190), cv2.FONT_HERSHEY_SIMPLEX, 
-            1,  (0, 0, 0), 2, cv2.LINE_AA)
-
+            1,  (255,255,255), 2, cv2.LINE_AA)
 
         frame = cv2.putText(frame, str(sayac_in), (100,190), cv2.FONT_HERSHEY_SIMPLEX, 
-            1,  (0, 0, 0), 2, cv2.LINE_AA)
-
-        
+            1,  (255,255,255), 2, cv2.LINE_AA)
+ 
         frame = cv2.putText(frame, str(len(self.in_line)), (100,100), cv2.FONT_HERSHEY_SIMPLEX, 
-                   1,  (0, 0, 0), 2, cv2.LINE_AA)
+                   1,  (255,255,255), 2, cv2.LINE_AA)
 
         frame = cv2.putText(frame, str(len( self.out_line)), (800,100), cv2.FONT_HERSHEY_SIMPLEX, 
-            1,  (0, 0, 0), 2, cv2.LINE_AA)
-
+            1,  (255,255,255), 2, cv2.LINE_AA)
 
         frame = cv2.putText(frame, "Toplam Gelen Arac", (100,60), cv2.FONT_HERSHEY_SIMPLEX, 
                    1,  (255, 0, 0), 2, cv2.LINE_AA)
-
-
 
         frame = cv2.putText(frame, "Toplam Giden Arac", (800,60), cv2.FONT_HERSHEY_SIMPLEX, 
                    1,  (255, 0, 0), 2, cv2.LINE_AA)
         
         sayac_in=0
         sayac_out=0
-   
 
         return frame
-
 
     def run(self): #count için gerekli
         
@@ -123,12 +114,14 @@ class CarCounter():
         
             veri,frame,fps = self.dedector.run()
             self.frame_converter(frame)
-            
+       
             try:
                 car_count = sum(obj[0]['class_name'] == 'car' for obj in veri)
                 arr = np.ones((car_count, 6))
+
             except:
-                exit()
+                pass
+            
             
             try:
 
@@ -150,19 +143,25 @@ class CarCounter():
                 cv2.waitKey(fps)
 
             except:
-                cv2.imshow("No Detect",frame)
+
+                frame = cv2.putText(frame, "NO DETECT", (500,60), cv2.FONT_HERSHEY_SIMPLEX, 
+                   1,  (255,255,255), 2, cv2.LINE_AA)
+                   
+                cv2.imshow("Detect",frame)
                 cv2.waitKey(fps)
 
                 
                 
             
     cv2.destroyAllWindows()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Source")
     parser.add_argument('--source', dest='input_string', type=str, default="video.mp4",
                         help='kaynak')
     args = parser.parse_args()
     src=args.input_string
+
     count = CarCounter('/home/fatih/yolov7/yolov7.pt',src)
     count.run()
 
