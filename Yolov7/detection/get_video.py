@@ -2,13 +2,16 @@ from threading import Thread
 import cv2, time
 
 class ThreadedCamera():
-    def __init__(self, src = 'video.mp4'):
+    def __init__(self, src=None):
+        if(src=="0" or src=="1"):
+            src=int(src)
+        print("src",src)
         self.capture = cv2.VideoCapture(src)
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
        
         # FPS = 1/X
         # X = desired FPS
-        self.FPS = 1/10
+        self.FPS = 1/25
         self.FPS_MS = int(self.FPS * 1000)
         # Start frame retrieval thread
         self.thread = Thread(target=self.update, args=())
@@ -27,8 +30,8 @@ class ThreadedCamera():
         #cv2.waitKey(self.FPS_MS)
         return self.frame, self.FPS_MS
         
-if __name__ == '__main__':
-    src = 'video.mp4'
+#if __name__ == '__main__':
+    # src = 'video.mp4'
     # src= 0
     # threaded_camera = ThreadedCamera(src)
     # while True:

@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import math 
 import torch
+import argparse
 from deep_sort_pytorch.utils.parser import get_config
 from deep_sort_pytorch.deep_sort import DeepSort
 from deep_sort_pytorch.utils.parser import get_config
@@ -10,78 +11,106 @@ from collections import deque
 from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
 from tracker import Tracker
+from shapely.geometry import Polygon,Point
+sayac_in=0
+sayac_out=0
 
 class CarCounter():
    
-    def __init__(self,model_path):
-        print("MOdel ",model_path)
-        self.dedector=ObjectDetector(model_path)
+    def __init__(self,model_path,src):
+        
+        self.dedector=ObjectDetector(model_path,src)
         self.tracker=Tracker()
-        self.detect2_liste = []
-        self.detect_liste = []
-        self.hesapla= []
-       
+ 
+        
+        self.in_line=[]
+        self.out_line=[]
+        
+        self.coordinates_in = [(446, 344), (626, 353), (525, 719),(5, 570)]
+        self.coordinates_out = [(663, 357), (849, 363), (1275, 622),(708, 716)]
+        self.polygon = Polygon(self.coordinates_in)
+        self.polygon2 = Polygon(self.coordinates_out)
 
     def frame_converter(self,frame):
         
-        cv2.rectangle(frame, (0,400), (623,730), (255,124,0), 2)
-        cv2.rectangle(frame, (660,400), (1277,718), (0,25,255), 2)
+        for i in range(len(self.coordinates_in)):
+            x1, y1 = self.coordinates_in[i]
+            x2, y2 = self.coordinates_in[(i + 1) % len(self.coordinates_in)]
+            cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Yeşil renkte çizgi, kalınlığı 2
+        for i in range(len(self.coordinates_out)):
+            x1, y1 = self.coordinates_out[i]
+            x2, y2 = self.coordinates_out[(i + 1) % len(self.coordinates_out)]
+            cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Yeşil renkte çizgi, kalınlığı 2
+        
 
 
-    def import_area(self,data):
+    def import_area(self,data,index):
         
-        
+        global sayac_in
+        global sayac_out
         orta_nokta_x= (data[0]+data[2])/2
         orta_nokta_y= (data[1]+data[3])/2
+        nokta=Point((orta_nokta_x,orta_nokta_y))
         
-    
-        if( (orta_nokta_x>0 and orta_nokta_y>400 and orta_nokta_x<623 and orta_nokta_y<730) ): #zone 1 ıcınde mı
-            self.detect_liste.append([orta_nokta_x,orta_nokta_y])
-         
+        if(self.polygon.contains(nokta)):
+            sayac_in+=1
+            if index not in self.in_line:
+                self.in_line.append(index)
         
-        if(orta_nokta_x>660 and orta_nokta_y>400 and orta_nokta_x<1277 and orta_nokta_y<718):
-            self.detect2_liste.append([orta_nokta_x,orta_nokta_y])
-          
-
+             
+        if(self.polygon2.contains(nokta)):
+            sayac_out+=1
+            if index not in self.out_line:
+                self.out_line.append(index)
+             
         
-
+     
     def counter(self,data,frame):
-        
 
+        global sayac_in
+        global sayac_out
 
-        frame,_dentities,_,flag = self.tracker.count_tracker(data,frame)
-        
-        
-        for i in range(0,len(data)):
-            self.import_area(data[i,:])
-            
+        frame,_dentities,_,flag,bbox_xyxy = self.tracker.count_tracker(data,frame)
 
         if (flag==1):
-            for i in _dentities:
-                if(i not in self.hesapla):
-                    self.hesapla.append(i) 
-            print("Arac id",self.hesapla)
-            print("Toplam arac sayisi on the screen",len(self.hesapla))
-       
-        frame = cv2.putText(frame, str(len(self.hesapla)), (100,100), cv2.FONT_HERSHEY_SIMPLEX, 
-                   1,  (10, 110, 220), 2, cv2.LINE_AA)
+            for i in range (len(bbox_xyxy)):
+                self.import_area(bbox_xyxy[i,0:4],_dentities[i])
 
 
 
-        frame = cv2.putText(frame, str(len(self.detect_liste)), (50,50), cv2.FONT_HERSHEY_SIMPLEX, 
-                   1,  (0, 0, 0), 2, cv2.LINE_AA)
-
-        frame = cv2.putText(frame, "IN", (80,50), cv2.FONT_HERSHEY_SIMPLEX, 
-                   1,  (0, 0, 0), 2, cv2.LINE_AA)
-
-        frame = cv2.putText(frame, str(len(self.detect2_liste)), (700,50), cv2.FONT_HERSHEY_SIMPLEX, 
-                   1,  (255, 0, 0), 2, cv2.LINE_AA)
-
-        frame = cv2.putText(frame, "OUT", (800,50), cv2.FONT_HERSHEY_SIMPLEX, 
-                   1,  (255, 0, 0), 2, cv2.LINE_AA)
+        frame = cv2.putText(frame, "Anlik Gelen Arac", (100,150), cv2.FONT_HERSHEY_SIMPLEX, 
+                   1,  (255, 255, 100), 2, cv2.LINE_AA)
+        
+        frame = cv2.putText(frame, "Anlik Giden Arac", (800,150), cv2.FONT_HERSHEY_SIMPLEX, 
+            1,  (255, 255, 100), 2, cv2.LINE_AA)
     
-        self.detect_liste.clear()
-        self.detect2_liste.clear()
+
+        frame = cv2.putText(frame, str(sayac_out), (800,190), cv2.FONT_HERSHEY_SIMPLEX, 
+            1,  (0, 0, 0), 2, cv2.LINE_AA)
+
+
+        frame = cv2.putText(frame, str(sayac_in), (100,190), cv2.FONT_HERSHEY_SIMPLEX, 
+            1,  (0, 0, 0), 2, cv2.LINE_AA)
+
+        
+        frame = cv2.putText(frame, str(len(self.in_line)), (100,100), cv2.FONT_HERSHEY_SIMPLEX, 
+                   1,  (0, 0, 0), 2, cv2.LINE_AA)
+
+        frame = cv2.putText(frame, str(len( self.out_line)), (800,100), cv2.FONT_HERSHEY_SIMPLEX, 
+            1,  (0, 0, 0), 2, cv2.LINE_AA)
+
+
+        frame = cv2.putText(frame, "Toplam Gelen Arac", (100,60), cv2.FONT_HERSHEY_SIMPLEX, 
+                   1,  (255, 0, 0), 2, cv2.LINE_AA)
+
+
+
+        frame = cv2.putText(frame, "Toplam Giden Arac", (800,60), cv2.FONT_HERSHEY_SIMPLEX, 
+                   1,  (255, 0, 0), 2, cv2.LINE_AA)
+        
+        sayac_in=0
+        sayac_out=0
+   
 
         return frame
 
@@ -90,16 +119,17 @@ class CarCounter():
         
         count=0
 
-        while(1):
+        while(True):
         
             veri,frame,fps = self.dedector.run()
             self.frame_converter(frame)
             
-            car_count = sum(obj[0]['class_name'] == 'car' for obj in veri)
-            arr = np.ones((car_count, 6))
-            #print("Car_count",car_count)
+            try:
+                car_count = sum(obj[0]['class_name'] == 'car' for obj in veri)
+                arr = np.ones((car_count, 6))
+            except:
+                exit()
             
-
             try:
 
                 for i in veri:
@@ -120,14 +150,20 @@ class CarCounter():
                 cv2.waitKey(fps)
 
             except:
-                print("Video sonu")
-                exit()
+                cv2.imshow("No Detect",frame)
+                cv2.waitKey(fps)
 
-            # print("-----Yeni veri----")
+                
+                
             
-
+    cv2.destroyAllWindows()
 if __name__ == "__main__":
-    count = CarCounter('/home/fatih/yolov7/yolov7.pt')
+    parser = argparse.ArgumentParser(description="Source")
+    parser.add_argument('--source', dest='input_string', type=str, default="video.mp4",
+                        help='kaynak')
+    args = parser.parse_args()
+    src=args.input_string
+    count = CarCounter('/home/fatih/yolov7/yolov7.pt',src)
     count.run()
 
 
