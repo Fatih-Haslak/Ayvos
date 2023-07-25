@@ -1,11 +1,8 @@
 # Ayvos Tasks
 My internship at Ayvos
-
 ![](https://github.com/Fatih-Haslak/ayvos/blob/main/result.gif)
-
 # Usage
 This repo working with yolov7 repo (https://github.com/WongKinYiu/yolov7)
-
 # Yolov7/Detect
 
 get_video.py --> Thread camera or video frame
