@@ -1,4 +1,4 @@
-#https://github.com/WongKinYiu/yolov7/blob/u7/seg/segment/predict.py
+# https://github.com/WongKinYiu/yolov7/blob/u7/seg/segment/predict.py
 import argparse
 import os
 import platform
