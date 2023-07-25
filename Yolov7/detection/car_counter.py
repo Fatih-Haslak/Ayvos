@@ -69,7 +69,7 @@ class CarCounter():
 
         global sayac_in
         global sayac_out
-
+        
         frame,_dentities,_,flag,bbox_xyxy = self.tracker.count_tracker(data,frame)
 
         if (flag==1):
@@ -127,8 +127,7 @@ class CarCounter():
 
                 for i in veri:
 
-                    if( i[0]["class_name"]=="car"):
-
+                    if( i[0]["class_name"]=="car" and float(i[0]["score"]) > 0.4 ):
                         arr[count:,0] = i[0]["x1"]
                         arr[count:,1] = i[0]["y1"]
                         arr[count:,2] = i[0]["x2"]

@@ -23,18 +23,17 @@ class ObjectDetector():
                                    force_reload=True, trust_repo=True)
 		
         self.camera=ThreadedCamera(src)
-        self.points = np.array([[[446,344],[849,363],[1275,622],[1278,719],[0,717],[0,571]]])
+        self.points = np.array([[[479,327],[790,320],[1057,490],[203,472]]])
            
     def detect_objects(self, frame):
         mask = np.zeros(self.frame.shape[0:2], dtype=np.uint8)
         cv2.fillPoly(mask, [self.points], 255)
-        overlay = self.frame.copy()
-        cv2.fillPoly(overlay, [self.points], (0, 255, 0))
-        cv2.addWeighted(overlay, 0.1, self.frame, 1 - 0.1, 0, self.frame)
-        cv2.drawContours(mask, [self.points], -1, (255, 255, 255), -1, cv2.LINE_AA)
-        self.frame = cv2.bitwise_and(self.frame,self.frame,mask = mask) 
-        
-        results = self.model(self.frame)
+        # overlay = self.frame.copy()
+        # cv2.fillPoly(overlay, [self.points], (0, 255, 0))
+        # cv2.addWeighted(overlay, 0.1, self.frame, 1 - 0.1, 0, self.frame)
+        #cv2.drawContours(mask, [self.points], -1, (255, 255, 255), -1, cv2.LINE_AA)
+        #self.frame = cv2.bitwise_and(self.frame,self.frame,mask = mask) 
+        results = self.model(frame)
         data = results.pandas().xyxy[0]
         data = data.to_numpy()
         return data
@@ -97,7 +96,7 @@ class ObjectDetector():
                     if " " in str(box[6]):
                         box[6]=(str(box[6]).replace(" ", "_"))
                     self.boundingData = str([int(box[0]), int(box[1]), int(box[2]), int(box[3]), str(box[4]), str(box[6])])
-                    #self.draw_bounding_box(self.frame, box)
+                    self.draw_bounding_box(self.frame, box)
                     self.veri += str(box).split("[")[1].split("]")[0] + '\n'
                 
                 #cv2.imshow("asd",self.frame)
@@ -105,7 +104,8 @@ class ObjectDetector():
                 #print("self",self.veri)
                 duzenli_veri=self.string_parser(self.veri)
                 return duzenli_veri,self.frame, self.FPS_MS
-                
+            else:
+                print("ELSE GİRDİ Mİ NE ZAMAN GİRDİ")
 
 
 #if __name__ == "__main__":
