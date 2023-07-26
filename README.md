@@ -21,7 +21,7 @@ Tensorrt inference
 
 Yolov7 pose estimation
 
-Bug fix, documentation, clean work,
+Bug fix, documentation, clean work, New repo for every task
 
 
 ![](https://github.com/Fatih-Haslak/ayvos/blob/main/result.gif)
