@@ -17,9 +17,9 @@ Yolo model to Tensorrt model (.engine)
 
 Tensorrt inference
 
-# Coming soon
-
 Yolov7 pose estimation
+
+# Coming soon
 
 Bug fix, documentation, clean work, New repo for every task(car_counter 2v and TensorRt inference )
 
