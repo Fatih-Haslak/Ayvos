@@ -1,5 +1,29 @@
 # Ayvos Tasks
 My internship at Ayvos
+
+# Finished
+
+Yolov7 detection oop code
+
+Yolov7 segmentation oop code4
+
+Detectron2 detection and segmentation oop code
+
+Yolov7 + deepsort(Yolov5 version)
+
+Yolov7 + deepsort (Yolov7 version)
+
+Yolo model to Tensorrt model (.engine)
+
+Tensorrt inference
+
+# Coming soon
+
+Yolov7 pose estimation
+
+Bug fix, documentation, clean work,
+
+
 ![](https://github.com/Fatih-Haslak/ayvos/blob/main/result.gif)
 # Usage
 This repo working with yolov7 repo (https://github.com/WongKinYiu/yolov7)
