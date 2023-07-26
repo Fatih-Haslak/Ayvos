@@ -21,7 +21,7 @@ Tensorrt inference
 
 Yolov7 pose estimation
 
-Bug fix, documentation, clean work, New repo for every task
+Bug fix, documentation, clean work, New repo for every task(car_counter 2v and TensorRt inference )
 
 
 ![](https://github.com/Fatih-Haslak/ayvos/blob/main/result.gif)
